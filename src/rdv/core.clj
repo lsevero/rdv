@@ -58,16 +58,16 @@
              (filter (fn [x] (some true? (map #(s/includes? % "VTM") x))) (drop 1 table))))
 
 (defn set-breakfast! [n price sheet]
-  (ss/set-cell! (ss/select-cell (str column-breakfast n) sheet) (s/replace price "," ".")))
+  (ss/set-cell! (ss/select-cell (str column-breakfast n) sheet) (Float/parseFloat (s/replace price "," "."))))
 
 (defn set-lunch! [n price sheet]
-  (ss/set-cell! (ss/select-cell (str column-lunch n) sheet) (s/replace price "," ".")))
+  (ss/set-cell! (ss/select-cell (str column-lunch n) sheet) (Float/parseFloat (s/replace price "," "."))))
 
 (defn set-dinner! [n price sheet]
-  (ss/set-cell! (ss/select-cell (str column-dinner n) sheet) (s/replace price "," ".")))
+  (ss/set-cell! (ss/select-cell (str column-dinner n) sheet) (Float/parseFloat (s/replace price "," "."))))
 
 (defn set-others! [n price reason sheet]
-  (ss/set-cell! (ss/select-cell (str column-others n) sheet) (s/replace price "," "."))
+  (ss/set-cell! (ss/select-cell (str column-others n) sheet) (Float/parseFloat (s/replace price "," ".")))
   (ss/set-cell! (ss/select-cell (str column-reason n) sheet) reason))
 
 (defn get-code [seq_]
