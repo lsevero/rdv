@@ -1,4 +1,4 @@
-(defproject rdv "0.1.0"
+(defproject rdv "0.1.1"
   :description "RDV"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"

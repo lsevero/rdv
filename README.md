@@ -10,7 +10,7 @@ Download from http://example.com/FIXME.
 
 FIXME: explanation
 
-    $ java -jar rdv-0.1.0-standalone.jar [args]
+    $ java -jar rdv-x.x.x-standalone.jar [args]
 
 ## Options
 
