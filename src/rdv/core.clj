@@ -31,9 +31,13 @@
 (def column-dinner "E")
 (def column-others "H")
 (def column-reason "J")
+(def column-hotel "F")
+(def column-car "G")
 (def code-breakfast "CFDM")
 (def code-lunch "ALM")
 (def code-dinner "JANT")
+(def code-hotel "HTL")
+(def code-car "ALGV")
 (def code-others "OUT")
 (def csv-code-column 5)
 (def csv-price-column 2)
@@ -57,17 +61,26 @@
   (partition entries-per-sheet entries-per-sheet nil
              (filter (fn [x] (some true? (map #(s/includes? % "VTM") x))) (drop 1 table))))
 
+(defn str->price [price_str]
+  (Float/parseFloat (s/replace price_str "," ".")))
+
 (defn set-breakfast! [n price sheet]
-  (ss/set-cell! (ss/select-cell (str column-breakfast n) sheet) (Float/parseFloat (s/replace price "," "."))))
+  (ss/set-cell! (ss/select-cell (str column-breakfast n) sheet) (str->price price)))
 
 (defn set-lunch! [n price sheet]
-  (ss/set-cell! (ss/select-cell (str column-lunch n) sheet) (Float/parseFloat (s/replace price "," "."))))
+  (ss/set-cell! (ss/select-cell (str column-lunch n) sheet) (str->price price)))
 
 (defn set-dinner! [n price sheet]
-  (ss/set-cell! (ss/select-cell (str column-dinner n) sheet) (Float/parseFloat (s/replace price "," "."))))
+  (ss/set-cell! (ss/select-cell (str column-dinner n) sheet) (str->price price)))
+
+(defn set-hotel! [n price sheet]
+  (ss/set-cell! (ss/select-cell (str column-hotel n) sheet) (str->price price)))
+
+(defn set-car! [n price sheet]
+  (ss/set-cell! (ss/select-cell (str column-car n) sheet) (str->price price)))
 
 (defn set-others! [n price reason sheet]
-  (ss/set-cell! (ss/select-cell (str column-others n) sheet) (Float/parseFloat (s/replace price "," ".")))
+  (ss/set-cell! (ss/select-cell (str column-others n) sheet) (str->price price))
   (ss/set-cell! (ss/select-cell (str column-reason n) sheet) reason))
 
 (defn get-code [seq_]
@@ -84,7 +97,9 @@
           (= (get-code line-page-seq) code-breakfast) (set-breakfast! line-xls (nth line-page-seq csv-price-column) verso)
           (= (get-code line-page-seq) code-lunch) (set-lunch! line-xls (nth line-page-seq csv-price-column) verso)
           (= (get-code line-page-seq) code-dinner) (set-dinner! line-xls (nth line-page-seq csv-price-column) verso)
-          (= (get-code line-page-seq) code-others) (set-others! line-xls (nth line-page-seq csv-price-column) (nth line-page-seq csv-reason-column) verso))))))
+          (= (get-code line-page-seq) code-hotel) (set-hotel! line-xls (nth line-page-seq csv-price-column) verso)
+          (= (get-code line-page-seq) code-car) (set-car! line-xls (nth line-page-seq csv-price-column) verso)
+          :else (set-others! line-xls (nth line-page-seq csv-price-column) (nth line-page-seq csv-reason-column) verso))))))
 
 (defn populate-xls [dict filter_ path-rdv]
   (let [xls (ss/load-workbook-from-resource rdv_base)
@@ -98,7 +113,6 @@
     (ss/set-cell! (ss/select-cell cell-agency capa) (:agency dict))
     (ss/set-cell! (ss/select-cell cell-account capa) (:account dict))
     (ss/set-cell! (ss/select-cell cell-reason capa) (:reason dict))
-    (print (count csv))
     (doseq [i (range (count csv))]
       (populate-page i xls csv))
     (ss/save-workbook! path-rdv xls)))
@@ -143,7 +157,7 @@
                                          gera-relatorios))))
 
 (ui/listen pick-file :mouse-clicked (fn [e]
-                                      (reset! tabela (.getAbsolutePath 
+                                      (reset! tabela (.getAbsolutePath
                                                        (ui-file/choose-file :type :open 
                                                                             :multi? false
                                                                             :remember-directory? true
