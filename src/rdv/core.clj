@@ -44,22 +44,17 @@
 (def csv-reason-column 1)
 (def csv-date-column 0)
 
+;;; THE STATE OF THE APP
 (def tabela (atom ""))
 
 (def pick-file (ui/button :text "Csv..."))
 
 (def generate (ui/button :text "GERAR!!!" :enabled? true))
 
+(def language (ui/combobox :model ["pt" "en"]))
+
 (defn extrai-info [dict]
   (conj {:tabela @tabela} dict))
-
-(defn filter-amex-table [table]
-  (partition entries-per-sheet entries-per-sheet nil
-             (remove (fn [x] (some true? (map #(s/includes? % "VTM") x))) (drop 1 table))))
-
-(defn filter-vtm-table [table]
-  (partition entries-per-sheet entries-per-sheet nil
-             (filter (fn [x] (some true? (map #(s/includes? % "VTM") x))) (drop 1 table))))
 
 (defn str->price [price_str]
   (Float/parseFloat (s/replace price_str "," ".")))
@@ -101,9 +96,9 @@
           (= (get-code line-page-seq) code-car) (set-car! line-xls (nth line-page-seq csv-price-column) verso)
           :else (set-others! line-xls (nth line-page-seq csv-price-column) (nth line-page-seq csv-reason-column) verso))))))
 
-(defn populate-xls [dict filter_ path-rdv]
+(defn populate-xls [dict path-rdv]
   (let [xls (ss/load-workbook-from-resource rdv_base)
-        csv (filter_ (with-open [reader (io/reader (:tabela dict))] (doall (csv/read-csv reader))))
+        csv (with-open [reader (io/reader (:tabela dict))] (doall (csv/read-csv reader)))
         capa (ss/select-sheet "capa" xls)]
     (ss/set-cell! (ss/select-cell cell-name capa) (:name dict))
     (ss/set-cell! (ss/select-cell cell-cpf capa) (:cpf dict))
@@ -118,10 +113,7 @@
     (ss/save-workbook! path-rdv xls)))
 
 (defn amex [dict]
-  (populate-xls dict filter-amex-table rdv_amex))
-
-(defn vtm [dict]
-  (populate-xls dict filter-vtm-table rdv_vtm))
+  (populate-xls dict rdv_amex))
 
 (defn gera-relatorios [dict]
   (if (empty? (:tabela dict))
@@ -131,13 +123,13 @@
                (do
                  (ui/config! generate :enabled? false :text "Gerando tabelas...")
                  (amex dict)
-                 (vtm dict)
                  (ui/alert "Tabelas salvas!\nTa me devendo um pf")
                  (ui/config! generate :enabled? true :text "GERAR!!!")
                  true)))
 
 (def form (ui/grid-panel :columns 2
-                         :items ["Nome:" (ui/text :id :name)
+                         :items ["Lingua do seu smart receipts" language
+                                 "Nome:" (ui/text :id :name)
                                  "CPF:" (ui/text :id :cpf)
                                  "Departamento:" (ui/text :id :departament)
                                  "OP:" (ui/text :id :op)
