@@ -7,6 +7,11 @@
             [clojure.string :as s])
   (:gen-class))
 
+(defn in?
+  "true if coll contains elm"
+  [coll elm]
+  (some #(= elm %) coll))
+
 (defn today []
   (.format (java.text.SimpleDateFormat. "dd-MM-yyyy") (java.util.Date.)))
 
@@ -23,7 +28,6 @@
 (def line-end 24)
 (def rdv_base "rdv_base.xlsx")
 (def rdv_amex (str "rdv_amex_" (today) ".xlsx"))
-(def rdv_vtm (str "rdv_vtm_" (today) ".xlsx"))
 (def rdv_dinheiro (str "rdv_dinheiro_" (today) ".xlsx"))
 (def column-date "A")
 (def column-breakfast "C")
@@ -45,19 +49,17 @@
 (def csv-date-column 0)
 
 ;;; THE STATE OF THE APP
-(def tabela (atom ""))
+(def csv-file (atom ""))
 
 (def pick-file (ui/button :text "Csv..."))
 
 (def generate (ui/button :text "GERAR!!!" :enabled? true))
 
-(def language (ui/combobox :model ["pt" "en"]))
-
 (defn extrai-info [dict]
-  (conj {:tabela @tabela} dict))
+  (conj {:csv @csv-file} dict))
 
-(defn str->price [price_str]
-  (Float/parseFloat (s/replace price_str "," ".")))
+(defn str->price [price-str]
+  (Float/parseFloat (s/replace price-str "," ".")))
 
 (defn set-breakfast! [n price sheet]
   (ss/set-cell! (ss/select-cell (str column-breakfast n) sheet) (str->price price)))
@@ -98,7 +100,7 @@
 
 (defn populate-xls [dict path-rdv]
   (let [xls (ss/load-workbook-from-resource rdv_base)
-        csv (with-open [reader (io/reader (:tabela dict))] (doall (csv/read-csv reader)))
+        csv (with-open [reader (io/reader (:csv dict))] (doall (csv/read-csv reader)))
         capa (ss/select-sheet "capa" xls)]
     (ss/set-cell! (ss/select-cell cell-name capa) (:name dict))
     (ss/set-cell! (ss/select-cell cell-cpf capa) (:cpf dict))
@@ -116,7 +118,7 @@
   (populate-xls dict rdv_amex))
 
 (defn gera-relatorios [dict]
-  (if (empty? (:tabela dict))
+  (if (empty? (:csv dict))
                (do
                  (ui/alert "Vacilão, escolhe um csv")
                  false)
@@ -128,7 +130,7 @@
                  true)))
 
 (def form (ui/grid-panel :columns 2
-                         :items ["Lingua do seu smart receipts" language
+                         :items ["Lingua do seu smart receipts" (ui/combobox :id :language :model ["pt" "en"])
                                  "Nome:" (ui/text :id :name)
                                  "CPF:" (ui/text :id :cpf)
                                  "Departamento:" (ui/text :id :departament)
@@ -149,12 +151,12 @@
                                          gera-relatorios))))
 
 (ui/listen pick-file :mouse-clicked (fn [e]
-                                      (reset! tabela (.getAbsolutePath
-                                                       (ui-file/choose-file :type :open 
+                                      (reset! csv-file (.getAbsolutePath
+                                                       (ui-file/choose-file :type :open
                                                                             :multi? false
                                                                             :remember-directory? true
                                                                             :filters [["CSV files" ["csv"]]])))
-                                      (ui/config! pick-file :text @tabela)))
+                                      (ui/config! pick-file :text @csv-file)))
 (defn -main
   "RAIO BARNABENIZADOR"
   [& args]
