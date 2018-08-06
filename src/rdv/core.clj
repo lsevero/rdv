@@ -27,8 +27,7 @@
 (def line-begin 4)
 (def line-end 24)
 (def rdv_base "rdv_base.xlsx")
-(def rdv_amex (str "rdv_amex_" (today) ".xlsx"))
-(def rdv_dinheiro (str "rdv_dinheiro_" (today) ".xlsx"))
+(def rdv_amex )
 (def column-date "A")
 (def column-breakfast "C")
 (def column-lunch "D")
@@ -98,7 +97,7 @@
           (= (get-code line-page-seq) code-car) (set-car! line-xls (nth line-page-seq csv-price-column) verso)
           :else (set-others! line-xls (nth line-page-seq csv-price-column) (nth line-page-seq csv-reason-column) verso))))))
 
-(defn populate-xls [dict path-rdv]
+(defn populate-xls [dict]
   (let [xls (ss/load-workbook-from-resource rdv_base)
         csv (with-open [reader (io/reader (:csv dict))] (doall (csv/read-csv reader)))
         capa (ss/select-sheet "capa" xls)]
@@ -112,10 +111,10 @@
     (ss/set-cell! (ss/select-cell cell-reason capa) (:reason dict))
     (doseq [i (range (count csv))]
       (populate-page i xls csv))
-    (ss/save-workbook! path-rdv xls)))
+    (ss/save-workbook! (str (:name-saved-file dict) (today) ".xlsx") xls)))
 
 (defn amex [dict]
-  (populate-xls dict rdv_amex))
+  (populate-xls dict))
 
 (defn gera-relatorios [dict]
   (if (empty? (:csv dict))
@@ -140,6 +139,7 @@
                                  "Conta corrente:" (ui/text :id :account)
                                  "Finalidade da viagem:" (ui/text :id :reason)
                                  "Tabela csv:" pick-file
+                                 "Nome da nova tabela:" (ui/text :id :name-saved-file)
                                  "" generate]))
 
 (ui/listen generate :mouse-clicked (fn [e]
