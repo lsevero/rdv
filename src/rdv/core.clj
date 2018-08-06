@@ -9,7 +9,7 @@
 
 (defn in?
   "true if coll contains elm"
-  [coll elm]
+  [elm coll]
   (some #(= elm %) coll))
 
 (defn today []
@@ -36,12 +36,12 @@
 (def column-reason "J")
 (def column-hotel "F")
 (def column-car "G")
-(def code-breakfast "CFDM")
-(def code-lunch "ALM")
-(def code-dinner "JANT")
-(def code-hotel "HTL")
-(def code-car "ALGV")
-(def code-others "OUT")
+(def code-breakfast ["CFDM" "BRFT"])
+(def code-lunch ["ALM" "LNCH"])
+(def code-dinner ["JANT" "DINN"])
+(def code-hotel ["HTL"])
+(def code-car ["ALGV" "RCAR"])
+(def code-others ["OUT" "MISC"])
 (def csv-code-column 5)
 (def csv-price-column 2)
 (def csv-reason-column 1)
@@ -90,16 +90,17 @@
             line-page-seq (nth page line-page)]
         (ss/set-cell! (ss/select-cell (str column-date line-xls) verso) (nth line-page-seq csv-date-column))
         (cond
-          (= (get-code line-page-seq) code-breakfast) (set-breakfast! line-xls (nth line-page-seq csv-price-column) verso)
-          (= (get-code line-page-seq) code-lunch) (set-lunch! line-xls (nth line-page-seq csv-price-column) verso)
-          (= (get-code line-page-seq) code-dinner) (set-dinner! line-xls (nth line-page-seq csv-price-column) verso)
-          (= (get-code line-page-seq) code-hotel) (set-hotel! line-xls (nth line-page-seq csv-price-column) verso)
-          (= (get-code line-page-seq) code-car) (set-car! line-xls (nth line-page-seq csv-price-column) verso)
+          (in? (get-code line-page-seq) code-breakfast) (set-breakfast! line-xls (nth line-page-seq csv-price-column) verso)
+          (in? (get-code line-page-seq) code-lunch) (set-lunch! line-xls (nth line-page-seq csv-price-column) verso)
+          (in? (get-code line-page-seq) code-dinner) (set-dinner! line-xls (nth line-page-seq csv-price-column) verso)
+          (in? (get-code line-page-seq) code-hotel) (set-hotel! line-xls (nth line-page-seq csv-price-column) verso)
+          (in? (get-code line-page-seq) code-car) (set-car! line-xls (nth line-page-seq csv-price-column) verso)
           :else (set-others! line-xls (nth line-page-seq csv-price-column) (nth line-page-seq csv-reason-column) verso))))))
 
 (defn populate-xls [dict]
   (let [xls (ss/load-workbook-from-resource rdv_base)
-        csv (with-open [reader (io/reader (:csv dict))] (doall (csv/read-csv reader)))
+        csv (partition entries-per-sheet entries-per-sheet nil
+                       (drop 1 (with-open [reader (io/reader (:csv dict))] (doall (csv/read-csv reader)))))
         capa (ss/select-sheet "capa" xls)]
     (ss/set-cell! (ss/select-cell cell-name capa) (:name dict))
     (ss/set-cell! (ss/select-cell cell-cpf capa) (:cpf dict))
@@ -129,8 +130,7 @@
                  true)))
 
 (def form (ui/grid-panel :columns 2
-                         :items ["Lingua do seu smart receipts" (ui/combobox :id :language :model ["pt" "en"])
-                                 "Nome:" (ui/text :id :name)
+                         :items ["Nome:" (ui/text :id :name)
                                  "CPF:" (ui/text :id :cpf)
                                  "Departamento:" (ui/text :id :departament)
                                  "OP:" (ui/text :id :op)
